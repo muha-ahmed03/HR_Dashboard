@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Employee Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-primary: #0B1120;
+  --bg-secondary: #111B2E;
+  --bg-card: #162033;
+  --bg-card-hover: #1A2740;
+  --border: #1E3050;
+  --border-light: #253A5C;
+  --text-primary: #F0F4FA;
+  --text-secondary: #8DA2BE;
+  --text-muted: #5A7299;
+  --accent-gold: #E8A838;
+  --accent-gold-light: #F5C563;
+  --accent-gold-dim: rgba(232, 168, 56, 0.12);
+  --accent-teal: #22D3B4;
+  --accent-teal-dim: rgba(34, 211, 180, 0.12);
+  --accent-coral: #F06E6E;
+  --accent-coral-dim: rgba(240, 110, 110, 0.12);
+  --accent-blue: #5B8DF9;
+  --accent-blue-dim: rgba(91, 141, 249, 0.12);
+  --accent-violet: #A78BFA;
+  --accent-violet-dim: rgba(167, 139, 250, 0.12);
+  --accent-emerald: #34D399;
+  --accent-emerald-dim: rgba(52, 211, 153, 0.12);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.35);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+/* Subtle grain overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+/* === LAYOUT === */
+.dashboard {
+  position: relative; z-index: 1;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 32px 60px;
+}
+
+/* === HEADER === */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo-mark {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-light));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: var(--bg-primary);
+  box-shadow: 0 0 24px rgba(232,168,56,0.2);
+}
+.header-title {
+  font-family: var(--font-heading);
+  font-size: 1.65rem; font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.header-subtitle {
+  font-size: 0.82rem; color: var(--text-muted);
+  margin-top: 2px; font-weight: 400;
+}
+.header-meta {
+  display: flex; align-items: center; gap: 20px;
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.header-meta .badge {
+  background: var(--accent-emerald-dim);
+  color: var(--accent-emerald);
+  padding: 4px 12px; border-radius: 20px;
+  font-weight: 600; font-size: 0.75rem;
+}
+
+/* === FILTERS / SLICERS === */
+.filters-bar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 26px; flex-wrap: wrap;
+}
+.filter-label {
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.08em; margin-right: 4px;
+}
+.filter-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 32px 8px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238DA2BE' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 140px;
+}
+.filter-select:hover { border-color: var(--border-light); }
+.filter-select:focus {
+  outline: none; border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px var(--accent-gold-dim);
+}
+
+/* === KPI CARDS === */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-md);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.kpi-card:nth-child(1)::before { background: linear-gradient(90deg, var(--accent-gold), var(--accent-gold-light)); }
+.kpi-card:nth-child(2)::before { background: linear-gradient(90deg, var(--accent-teal), #5DDEC4); }
+.kpi-card:nth-child(3)::before { background: linear-gradient(90deg, var(--accent-blue), #7BA5FB); }
+.kpi-card:nth-child(4)::before { background: linear-gradient(90deg, var(--accent-coral), #F59E9E); }
+.kpi-card:nth-child(5)::before { background: linear-gradient(90deg, var(--accent-violet), #C4B5FD); }
+.kpi-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 14px;
+}
+.kpi-card:nth-child(1) .kpi-icon { background: var(--accent-gold-dim); color: var(--accent-gold); }
+.kpi-card:nth-child(2) .kpi-icon { background: var(--accent-teal-dim); color: var(--accent-teal); }
+.kpi-card:nth-child(3) .kpi-icon { background: var(--accent-blue-dim); color: var(--accent-blue); }
+.kpi-card:nth-child(4) .kpi-icon { background: var(--accent-coral-dim); color: var(--accent-coral); }
+.kpi-card:nth-child(5) .kpi-icon { background: var(--accent-violet-dim); color: var(--accent-violet); }
+.kpi-value {
+  font-size: 1.75rem; font-weight: 700;
+  letter-spacing: -0.03em; line-height: 1.1;
+  margin-bottom: 4px;
+}
+.kpi-label { font-size: 0.78rem; color: var(--text-secondary); font-weight: 500; }
+.kpi-trend {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 600; margin-top: 10px;
+  padding: 3px 8px; border-radius: 6px;
+}
+.kpi-trend.up { background: var(--accent-emerald-dim); color: var(--accent-emerald); }
+.kpi-trend.down { background: var(--accent-coral-dim); color: var(--accent-coral); }
+.kpi-trend.neutral { background: var(--accent-blue-dim); color: var(--accent-blue); }
+
+/* === CHART GRID === */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.chart-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.chart-panel:hover {
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+.chart-panel h3 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem; font-weight: 600;
+  margin-bottom: 4px;
+}
+.chart-panel .chart-subtitle {
+  font-size: 0.75rem; color: var(--text-muted);
+  margin-bottom: 18px;
+}
+.chart-wrapper { position: relative; width: 100%; }
+.span-4 { grid-column: span 4; }
+.span-5 { grid-column: span 5; }
+.span-6 { grid-column: span 6; }
+.span-7 { grid-column: span 7; }
+.span-8 { grid-column: span 8; }
+.span-12 { grid-column: span 12; }
+
+/* === DATA TABLE === */
+.table-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  overflow: hidden;
+}
+.table-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.table-header h3 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem; font-weight: 600;
+}
+.table-search {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  width: 220px;
+  transition: border-color 0.2s;
+}
+.table-search:focus {
+  outline: none; border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px var(--accent-gold-dim);
+}
+.table-scroll { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.82rem;
+}
+thead th {
+  text-align: left; padding: 10px 14px;
+  font-weight: 600; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+thead th:hover { color: var(--accent-gold); }
+thead th.sorted { color: var(--accent-gold); }
+tbody tr {
+  border-bottom: 1px solid rgba(30,48,80,0.5);
+  transition: background 0.15s;
+}
+tbody tr:hover { background: var(--bg-card-hover); }
+tbody td { padding: 10px 14px; white-space: nowrap; color: var(--text-primary); }
+.dept-badge {
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.status-dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin-right: 6px;
+}
+.status-active .status-dot { background: var(--accent-emerald); }
+.status-onleave .status-dot { background: var(--accent-gold); }
+.status-remote .status-dot { background: var(--accent-blue); }
+.pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin-top: 16px;
+}
+.page-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 12px; border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.78rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.page-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+.page-btn.active {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border-color: var(--accent-gold);
+  font-weight: 600;
+}
+
+/* === FOOTER === */
+.footer {
+  text-align: center;
+  padding: 32px 0 16px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+.footer a { color: var(--accent-gold); text-decoration: none; }
+
+/* === ANIMATIONS === */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease forwards;
+}
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.3s; }
+.delay-7 { animation-delay: 0.35s; }
+.delay-8 { animation-delay: 0.4s; }
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 6; }
+}
+@media (max-width: 768px) {
+  .dashboard { padding: 16px; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .filters-bar { gap: 8px; }
+  .filter-select { min-width: 120px; }
+}
+
+/* Chart.js tooltip override */
+.chartjs-tooltip {
+  font-family: var(--font-body) !important;
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+  <!-- HEADER -->
+  <header class="header animate-in">
+    <div class="header-left">
+      <div class="logo-mark">ETG</div>
+      <div>
+        <div class="header-title">Employee Analytics</div>
+        <div class="header-subtitle">Elite Tech Group &mdash; Workforce Intelligence</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="badge">&#9679; Live Data</span>
+      <span id="currentDate">Q2 2026 Report</span>
+    </div>
+  </header>
+
+  <!-- FILTERS / SLICERS -->
+  <div class="filters-bar animate-in delay-1">
+    <span class="filter-label">Filters</span>
+    <select class="filter-select" id="filterDept">
+      <option value="all">All Departments</option>
+    </select>
+    <select class="filter-select" id="filterGender">
+      <option value="all">All Genders</option>
+    </select>
+    <select class="filter-select" id="filterStatus">
+      <option value="all">All Status</option>
+    </select>
+    <select class="filter-select" id="filterLevel">
+      <option value="all">All Levels</option>
+    </select>
+    <select class="filter-select" id="filterTenure">
+      <option value="all">All Tenure</option>
+      <option value="0-2">0-2 Years</option>
+      <option value="3-5">3-5 Years</option>
+      <option value="6-10">6-10 Years</option>
+      <option value="10+">10+ Years</option>
+    </select>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card animate-in delay-1">
+      <div class="kpi-icon">&#128101;</div>
+      <div class="kpi-value" id="kpiHeadcount">--</div>
+      <div class="kpi-label">Total Headcount</div>
+      <div class="kpi-trend up">&#9650; +5 this quarter</div>
+    </div>
+    <div class="kpi-card animate-in delay-2">
+      <div class="kpi-icon">&#128200;</div>
+      <div class="kpi-value" id="kpiAvgSalary">--</div>
+      <div class="kpi-label">Avg. Annual Salary</div>
+      <div class="kpi-trend up">&#9650; +3.2% YoY</div>
+    </div>
+    <div class="kpi-card animate-in delay-3">
+      <div class="kpi-icon">&#128197;</div>
+      <div class="kpi-value" id="kpiAttendance">--</div>
+      <div class="kpi-label">Avg. Attendance Rate</div>
+      <div class="kpi-trend neutral">&#9654; Stable</div>
+    </div>
+    <div class="kpi-card animate-in delay-4">
+      <div class="kpi-icon">&#128683;</div>
+      <div class="kpi-value" id="kpiTurnover">--</div>
+      <div class="kpi-label">Annual Turnover Rate</div>
+      <div class="kpi-trend down">&#9660; -1.8%</div>
+    </div>
+    <div class="kpi-card animate-in delay-5">
+      <div class="kpi-icon">&#11088;</div>
+      <div class="kpi-value" id="kpiSatisfaction">--</div>
+      <div class="kpi-label">Avg. Satisfaction Score</div>
+      <div class="kpi-trend up">&#9650; +0.3 pts</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Dept Distribution + Salary Distribution -->
+  <div class="charts-grid">
+    <div class="chart-panel span-5 animate-in delay-3">
+      <h3>Department Distribution</h3>
+      <p class="chart-subtitle">Employee count by department</p>
+      <div class="chart-wrapper"><canvas id="chartDept"></canvas></div>
+    </div>
+    <div class="chart-panel span-7 animate-in delay-4">
+      <h3>Salary Distribution by Department</h3>
+      <p class="chart-subtitle">Box-style range with median overlay</p>
+      <div class="chart-wrapper"><canvas id="chartSalary"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Headcount Trend + Gender Ratio + Age Groups -->
+  <div class="charts-grid">
+    <div class="chart-panel span-5 animate-in delay-4">
+      <h3>Monthly Headcount Trend</h3>
+      <p class="chart-subtitle">Hires, separations &amp; net headcount (12 months)</p>
+      <div class="chart-wrapper"><canvas id="chartHeadcountTrend"></canvas></div>
+    </div>
+    <div class="chart-panel span-3 animate-in delay-5">
+      <h3>Gender Ratio</h3>
+      <p class="chart-subtitle">Current workforce composition</p>
+      <div class="chart-wrapper" style="max-width:220px;margin:0 auto"><canvas id="chartGender"></canvas></div>
+    </div>
+    <div class="chart-panel span-4 animate-in delay-5">
+      <h3>Age Group Distribution</h3>
+      <p class="chart-subtitle">Employees by age bracket</p>
+      <div class="chart-wrapper"><canvas id="chartAge"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Attendance Heatmap + Performance + Turnover by Dept -->
+  <div class="charts-grid">
+    <div class="chart-panel span-6 animate-in delay-5">
+      <h3>Attendance by Day of Week</h3>
+      <p class="chart-subtitle">Average attendance % per weekday over last quarter</p>
+      <div class="chart-wrapper"><canvas id="chartAttendance"></canvas></div>
+    </div>
+    <div class="chart-panel span-6 animate-in delay-6">
+      <h3>Performance Ratings</h3>
+      <p class="chart-subtitle">Latest review cycle distribution</p>
+      <div class="chart-wrapper"><canvas id="chartPerformance"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 4: Tenure Distribution + Overtime + Education -->
+  <div class="charts-grid">
+    <div class="chart-panel span-4 animate-in delay-6">
+      <h3>Tenure Distribution</h3>
+      <p class="chart-subtitle">Years of service breakdown</p>
+      <div class="chart-wrapper"><canvas id="chartTenure"></canvas></div>
+    </div>
+    <div class="chart-panel span-4 animate-in delay-7">
+      <h3>Monthly Overtime Hours</h3>
+      <p class="chart-subtitle">Average OT hours per employee by department</p>
+      <div class="chart-wrapper"><canvas id="chartOvertime"></canvas></div>
+    </div>
+    <div class="chart-panel span-4 animate-in delay-7">
+      <h3>Education Level</h3>
+      <p class="chart-subtitle">Highest qualification attained</p>
+      <div class="chart-wrapper"><canvas id="chartEducation"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 5: Salary vs Performance Scatter + Employment Type -->
+  <div class="charts-grid">
+    <div class="chart-panel span-7 animate-in delay-7">
+      <h3>Salary vs. Performance Score</h3>
+      <p class="chart-subtitle">Individual employee mapping &mdash; sized by tenure</p>
+      <div class="chart-wrapper"><canvas id="chartScatter"></canvas></div>
+    </div>
+    <div class="chart-panel span-5 animate-in delay-8">
+      <h3>Employment Type Breakdown</h3>
+      <p class="chart-subtitle">Full-time, part-time, contract, remote</p>
+      <div class="chart-wrapper"><canvas id="chartEmpType"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 6: Diversity metrics + Leave balance -->
+  <div class="charts-grid">
+    <div class="chart-panel span-6 animate-in delay-7">
+      <h3>Leave Balance by Department</h3>
+      <p class="chart-subtitle">Average remaining leave days per department</p>
+      <div class="chart-wrapper"><canvas id="chartLeave"></canvas></div>
+    </div>
+    <div class="chart-panel span-6 animate-in delay-8">
+      <h3>Diversity Metrics</h3>
+      <p class="chart-subtitle">Gender ratio by department</p>
+      <div class="chart-wrapper"><canvas id="chartDiversity"></canvas></div>
+    </div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="table-section animate-in delay-8">
+    <div class="table-header">
+      <h3>Employee Directory</h3>
+      <input type="text" class="table-search" id="tableSearch" placeholder="Search employees...">
+    </div>
+    <div class="table-scroll">
+      <table id="employeeTable">
+        <thead>
+          <tr>
+            <th data-col="id">ID</th>
+            <th data-col="name">Name</th>
+            <th data-col="department">Department</th>
+            <th data-col="position">Position</th>
+            <th data-col="level">Level</th>
+            <th data-col="age">Age</th>
+            <th data-col="gender">Gender</th>
+            <th data-col="tenure">Tenure (yrs)</th>
+            <th data-col="salary">Salary</th>
+            <th data-col="performance">Perf.</th>
+            <th data-col="attendance">Attend.</th>
+            <th data-col="status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <footer class="footer">
+    <p>HR Employee Analytics Dashboard &mdash; Data as of June 2026 &mdash; Designed for <a href="#">Elite Tech Group</a></p>
+  </footer>
+</div>
+<script>
+// =============================================
+// DATA GENERATION
+// =============================================
+const DEPARTMENTS = ['Engineering', 'Marketing', 'Sales', 'HR', 'Finance', 'Operations', 'Product', 'Customer Support'];
+const DEPT_COLORS = {
+  'Engineering': '#5B8DF9', 'Marketing': '#F5C563', 'Sales': '#22D3B4',
+  'HR': '#A78BFA', 'Finance': '#F06E6E', 'Operations': '#34D399',
+  'Product': '#E8A838', 'Customer Support': '#60A5FA'
+};
+const GENDERS = ['Male', 'Female'];
+const LEVELS = ['Junior', 'Mid', 'Senior', 'Lead', 'Manager', 'Director'];
+const STATUSES = ['Active', 'On Leave', 'Remote'];
+const EMP_TYPES = ['Full-Time', 'Part-Time', 'Contract', 'Remote'];
+const EDUCATIONS = ["High School", "Associate's", "Bachelor's", "Master's", "PhD"];
+
+const FIRST_NAMES_M = ['James','Robert','Michael','David','William','Daniel','Christopher','Matthew','Andrew','Joshua','Ryan','Brandon','Tyler','Kevin','Nathan','Ethan','Noah','Liam','Aiden','Lucas'];
+const FIRST_NAMES_F = ['Emma','Olivia','Ava','Sophia','Isabella','Mia','Charlotte','Amelia','Harper','Evelyn','Abigail','Emily','Ella','Grace','Chloe','Lily','Aria','Riley','Zoey','Nora'];
+const FIRST_NAMES_NB = ['Alex','Jordan','Taylor','Morgan','Casey','Riley','Quinn','Avery','Sage','Rowan'];
+const LAST_NAMES = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Ramirez','Lewis','Robinson'];
+const POSITIONS = {
+  'Engineering': ['Software Engineer', 'Backend Developer', 'Frontend Developer', 'DevOps Engineer', 'QA Engineer', 'Data Engineer'],
+  'Marketing': ['Marketing Specialist', 'Content Strategist', 'SEO Analyst', 'Brand Manager', 'Digital Marketer'],
+  'Sales': ['Sales Rep', 'Account Executive', 'Sales Manager', 'Business Dev Rep', 'Sales Analyst'],
+  'HR': ['HR Coordinator', 'Recruiter', 'HR Business Partner', 'Training Specialist'],
+  'Finance': ['Accountant', 'Financial Analyst', 'Payroll Specialist', 'Auditor'],
+  'Operations': ['Operations Analyst', 'Logistics Coordinator', 'Supply Chain Mgr', 'Procurement Spec.'],
+  'Product': ['Product Manager', 'Product Owner', 'UX Designer', 'UX Researcher', 'Business Analyst'],
+  'Customer Support': ['Support Agent', 'Support Lead', 'Customer Success Mgr', 'Technical Support']
+};
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function pick(arr) { return arr[rand(0, arr.length - 1)]; }
+function weightedPick(arr, weights) {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total, cum = 0;
+  for (let i = 0; i < arr.length; i++) { cum += weights[i]; if (r <= cum) return arr[i]; }
+  return arr[arr.length - 1];
+}
+
+function generateEmployees(n) {
+  const emps = [];
+  const deptWeights = [18, 10, 12, 6, 7, 9, 10, 10]; // realistic distribution ~82
+  for (let i = 1; i <= n; i++) {
+    const dept = weightedPick(DEPARTMENTS, deptWeights);
+    const gender = weightedPick(GENDERS, [50, 50]);
+    const firstName = gender === 'Male' ? pick(FIRST_NAMES_M) : pick(FIRST_NAMES_F);
+    const lastName = pick(LAST_NAMES);
+    const age = rand(22, 62);
+    const tenure = Math.min(rand(0, Math.floor((age - 22) * 0.7)), 20);
+    let level;
+    if (tenure <= 2) level = pick(['Junior', 'Junior', 'Mid']);
+    else if (tenure <= 5) level = pick(['Mid', 'Mid', 'Senior']);
+    else if (tenure <= 10) level = pick(['Senior', 'Senior', 'Lead', 'Manager']);
+    else level = pick(['Lead', 'Manager', 'Manager', 'Director']);
+    const baseSalary = { 'Junior': 42000, 'Mid': 58000, 'Senior': 78000, 'Lead': 95000, 'Manager': 105000, 'Director': 135000 };
+    const salary = Math.round((baseSalary[level] + rand(-8000, 15000)) / 500) * 500;
+    const performance = +(Math.min(5, Math.max(1, 3 + (Math.random() - 0.3) * 2.5))).toFixed(1);
+    const attendance = +(Math.min(100, Math.max(78, 92 + (Math.random() - 0.4) * 12))).toFixed(1);
+    const status = weightedPick(STATUSES, [70, 15, 15]);
+    const empType = status === 'Remote' ? 'Remote' : weightedPick(EMP_TYPES.slice(0, 3), [75, 10, 15]);
+    const education = weightedPick(EDUCATIONS, [8, 12, 50, 25, 5]);
+    const overtime = +(Math.max(0, rand(0, 20) + (level === 'Manager' || level === 'Director' ? rand(3, 10) : 0)) / 4).toFixed(1);
+    const leaveBalance = rand(2, 22);
+    const satisfaction = +(Math.min(10, Math.max(3, 6.5 + (Math.random() - 0.4) * 5))).toFixed(1);
+
+    emps.push({
+      id: `NV${String(i).padStart(3, '0')}`,
+      name: `${firstName} ${lastName}`,
+      department: dept, position: pick(POSITIONS[dept]),
+      level, age, gender, tenure, salary, performance,
+      attendance, status, empType, education, overtime,
+      leaveBalance, satisfaction
+    });
+  }
+  return emps;
+}
+
+const employees = generateEmployees(82);
+
+// =============================================
+// CHART.JS DEFAULTS
+// =============================================
+Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+Chart.defaults.color = '#8DA2BE';
+Chart.defaults.borderColor = 'rgba(30,48,80,0.5)';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.pointStyleWidth = 12;
+Chart.defaults.plugins.legend.labels.padding = 16;
+Chart.defaults.plugins.tooltip.backgroundColor = '#1A2740';
+Chart.defaults.plugins.tooltip.borderColor = '#253A5C';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.tooltip.padding = 12;
+Chart.defaults.plugins.tooltip.titleFont = { weight: '600', size: 13 };
+Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+Chart.defaults.animation = { duration: 800, easing: 'easeOutQuart' };
+
+// =============================================
+// FILTER LOGIC
+// =============================================
+let filteredEmployees = [...employees];
+let currentPage = 1;
+const PAGE_SIZE = 12;
+
+function populateFilters() {
+  const deptSelect = document.getElementById('filterDept');
+  const genderSelect = document.getElementById('filterGender');
+  const statusSelect = document.getElementById('filterStatus');
+  const levelSelect = document.getElementById('filterLevel');
+  DEPARTMENTS.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; deptSelect.appendChild(o); });
+  GENDERS.forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g; genderSelect.appendChild(o); });
+  STATUSES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; statusSelect.appendChild(o); });
+  LEVELS.forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l; levelSelect.appendChild(o); });
+}
+
+function applyFilters() {
+  const dept = document.getElementById('filterDept').value;
+  const gender = document.getElementById('filterGender').value;
+  const status = document.getElementById('filterStatus').value;
+  const level = document.getElementById('filterLevel').value;
+  const tenure = document.getElementById('filterTenure').value;
+
+  filteredEmployees = employees.filter(e => {
+    if (dept !== 'all' && e.department !== dept) return false;
+    if (gender !== 'all' && e.gender !== gender) return false;
+    if (status !== 'all' && e.status !== status) return false;
+    if (level !== 'all' && e.level !== level) return false;
+    if (tenure !== 'all') {
+      const [lo, hi] = tenure === '10+' ? [10, 99] : tenure.split('-').map(Number);
+      if (e.tenure < lo || e.tenure > hi) return false;
+    }
+    return true;
+  });
+  currentPage = 1;
+  updateAll();
+}
+
+function updateAll() {
+  updateKPIs();
+  renderAllCharts();
+  renderTable();
+}
+
+// =============================================
+// KPI UPDATES
+// =============================================
+function updateKPIs() {
+  const d = filteredEmployees;
+  document.getElementById('kpiHeadcount').textContent = d.length;
+  const avgSalary = d.length ? Math.round(d.reduce((s, e) => s + e.salary, 0) / d.length) : 0;
+  document.getElementById('kpiAvgSalary').textContent = '$' + avgSalary.toLocaleString();
+  const avgAttend = d.length ? (d.reduce((s, e) => s + e.attendance, 0) / d.length).toFixed(1) : 0;
+  document.getElementById('kpiAttendance').textContent = avgAttend + '%';
+  const avgSat = d.length ? (d.reduce((s, e) => s + e.satisfaction, 0) / d.length).toFixed(1) : 0;
+  document.getElementById('kpiSatisfaction').textContent = avgSat + '/10';
+  // Turnover: simulate based on separated ratio
+  const turnRate = d.length ? ((d.filter(e => e.status === 'On Leave').length / d.length) * 100 * 0.6 + 4.2).toFixed(1) : 0;
+  document.getElementById('kpiTurnover').textContent = turnRate + '%';
+}
+
+// =============================================
+// CHART INSTANCES
+// =============================================
+let charts = {};
+function destroyCharts() { Object.values(charts).forEach(c => c && c.destroy()); charts = {}; }
+
+function renderAllCharts() {
+  destroyCharts();
+  renderDeptChart();
+  renderSalaryChart();
+  renderHeadcountTrend();
+  renderGenderChart();
+  renderAgeChart();
+  renderAttendanceChart();
+  renderPerformanceChart();
+  renderTenureChart();
+  renderOvertimeChart();
+  renderEducationChart();
+  renderScatterChart();
+  renderEmpTypeChart();
+  renderLeaveChart();
+  renderDiversityChart();
+}
+
+function renderDeptChart() {
+  const counts = {};
+  filteredEmployees.forEach(e => { counts[e.department] = (counts[e.department] || 0) + 1; });
+  const labels = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  charts.dept = new Chart(document.getElementById('chartDept'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: labels.map(l => counts[l]),
+        backgroundColor: labels.map(l => DEPT_COLORS[l]),
+        borderWidth: 0, hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.1,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.parsed / total) * 100).toFixed(1);
+              return ` ${ctx.label}: ${ctx.parsed} employees (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderSalaryChart() {
+  const deptSalaries = {};
+  filteredEmployees.forEach(e => {
+    if (!deptSalaries[e.department]) deptSalaries[e.department] = [];
+    deptSalaries[e.department].push(e.salary);
+  });
+  const labels = Object.keys(deptSalaries).sort();
+  const mins = labels.map(d => Math.min(...deptSalaries[d]));
+  const maxes = labels.map(d => Math.max(...deptSalaries[d]));
+  const avgs = labels.map(d => Math.round(deptSalaries[d].reduce((a, b) => a + b, 0) / deptSalaries[d].length));
+  const medians = labels.map(d => {
+    const s = [...deptSalaries[d]].sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+  });
+
+  charts.salary = new Chart(document.getElementById('chartSalary'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Min', data: mins, backgroundColor: 'rgba(91,141,249,0.25)', borderColor: '#5B8DF9', borderWidth: 1, borderRadius: 4 },
+        { label: 'Median', data: medians, backgroundColor: 'rgba(232,168,56,0.5)', borderColor: '#E8A838', borderWidth: 1, borderRadius: 4 },
+        { label: 'Max', data: maxes, backgroundColor: 'rgba(34,211,180,0.25)', borderColor: '#22D3B4', borderWidth: 1, borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 2,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} Salary: $${ctx.parsed.y.toLocaleString()}` } }
+      },
+      scales: {
+        y: { ticks: { callback: v => '$' + (v / 1000) + 'k' }, grid: { color: 'rgba(30,48,80,0.3)' } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderHeadcountTrend() {
+  const months = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const hires =    [2, 1, 3, 0, 2, 1, 3, 2, 1, 2, 3, 2];
+  const separations = [1, 0, 1, 2, 1, 1, 0, 1, 2, 1, 0, 1];
+  const base = employees.length - hires.reduce((a, b) => a + b, 0) + separations.reduce((a, b) => a + b, 0);
+  let running = base;
+  const headcount = months.map((_, i) => { running += hires[i] - separations[i]; return running; });
+
+  charts.trend = new Chart(document.getElementById('chartHeadcountTrend'), {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Headcount', data: headcount, borderColor: '#E8A838', backgroundColor: 'rgba(232,168,56,0.08)', fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2.5 },
+        { label: 'Hires', data: hires, borderColor: '#22D3B4', backgroundColor: 'rgba(34,211,180,0.08)', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2, borderDash: [5, 3] },
+        { label: 'Separations', data: separations, borderColor: '#F06E6E', backgroundColor: 'rgba(240,110,110,0.08)', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2, borderDash: [5, 3] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 2,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}${ctx.dataset.label === 'Headcount' ? ' employees' : ''}` } }
+      },
+      scales: {
+        y: { grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: false },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderGenderChart() {
+  const counts = { Male: 0, Female: 0 };
+  filteredEmployees.forEach(e => { counts[e.gender] = (counts[e.gender] || 0) + 1; });
+  charts.gender = new Chart(document.getElementById('chartGender'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{ data: Object.values(counts), backgroundColor: ['#5B8DF9', '#F5C563'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1,
+      cutout: '55%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.parsed / total) * 100).toFixed(1);
+              return ` ${ctx.label}: ${ctx.parsed} employees (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderAgeChart() {
+  const brackets = { '22-27': 0, '28-34': 0, '35-42': 0, '43-50': 0, '51+': 0 };
+  filteredEmployees.forEach(e => {
+    if (e.age <= 27) brackets['22-27']++;
+    else if (e.age <= 34) brackets['28-34']++;
+    else if (e.age <= 42) brackets['35-42']++;
+    else if (e.age <= 50) brackets['43-50']++;
+    else brackets['51+']++;
+  });
+  charts.age = new Chart(document.getElementById('chartAge'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(brackets),
+      datasets: [{ data: Object.values(brackets), backgroundColor: ['#5B8DF9', '#22D3B4', '#E8A838', '#F06E6E', '#A78BFA'], borderRadius: 6, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.5,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} employees in age ${ctx.label}` } }
+      },
+      scales: {
+        y: { grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: true },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderAttendanceChart() {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const byDept = {};
+  DEPARTMENTS.forEach(dept => {
+    byDept[dept] = days.map(() => +(88 + Math.random() * 10).toFixed(1));
+  });
+  const activeDepts = [...new Set(filteredEmployees.map(e => e.department))];
+  charts.attendance = new Chart(document.getElementById('chartAttendance'), {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: activeDepts.slice(0, 5).map(dept => ({
+        label: dept,
+        data: byDept[dept],
+        backgroundColor: DEPT_COLORS[dept] + '80',
+        borderColor: DEPT_COLORS[dept],
+        borderWidth: 1, borderRadius: 4
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}% attendance` } }
+      },
+      scales: {
+        y: { min: 80, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(30,48,80,0.3)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderPerformanceChart() {
+  const ratings = { '1 - Poor': 0, '2 - Below Avg': 0, '3 - Meets': 0, '4 - Exceeds': 0, '5 - Outstanding': 0 };
+  filteredEmployees.forEach(e => {
+    const r = Math.round(e.performance);
+    const keys = Object.keys(ratings);
+    if (r >= 1 && r <= 5) ratings[keys[r - 1]]++;
+  });
+  const labels = Object.keys(ratings);
+  const data = Object.values(ratings);
+  const colors = ['rgba(240,110,110,0.7)', 'rgba(245,197,99,0.7)', 'rgba(91,141,249,0.7)', 'rgba(34,211,180,0.7)', 'rgba(167,139,250,0.7)'];
+  const borderColors = ['#F06E6E', '#F5C563', '#5B8DF9', '#22D3B4', '#A78BFA'];
+  const total = data.reduce((a, b) => a + b, 0);
+  charts.performance = new Chart(document.getElementById('chartPerformance'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Employees',
+        data,
+        backgroundColor: colors,
+        borderColor: borderColors,
+        borderWidth: 1.5,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.7,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const pct = total > 0 ? ((ctx.parsed.y / total) * 100).toFixed(1) : 0;
+              return `${ctx.parsed.y} employees (${pct}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: { grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: true, ticks: { stepSize: 1 } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderTenureChart() {
+  const brackets = { '0-2 yrs': 0, '3-5 yrs': 0, '6-10 yrs': 0, '11-15 yrs': 0, '16+ yrs': 0 };
+  filteredEmployees.forEach(e => {
+    if (e.tenure <= 2) brackets['0-2 yrs']++;
+    else if (e.tenure <= 5) brackets['3-5 yrs']++;
+    else if (e.tenure <= 10) brackets['6-10 yrs']++;
+    else if (e.tenure <= 15) brackets['11-15 yrs']++;
+    else brackets['16+ yrs']++;
+  });
+  charts.tenure = new Chart(document.getElementById('chartTenure'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(brackets),
+      datasets: [{
+        data: Object.values(brackets),
+        backgroundColor: 'rgba(232,168,56,0.35)',
+        borderColor: '#E8A838',
+        borderWidth: 1.5, borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.3,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x} employees with ${ctx.label} tenure` } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: true },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderOvertimeChart() {
+  const deptOT = {};
+  filteredEmployees.forEach(e => {
+    if (!deptOT[e.department]) deptOT[e.department] = [];
+    deptOT[e.department].push(e.overtime);
+  });
+  const labels = Object.keys(deptOT).sort((a, b) => {
+    const avgA = deptOT[a].reduce((x, y) => x + y, 0) / deptOT[a].length;
+    const avgB = deptOT[b].reduce((x, y) => x + y, 0) / deptOT[b].length;
+    return avgB - avgA;
+  });
+  const avgs = labels.map(d => +(deptOT[d].reduce((a, b) => a + b, 0) / deptOT[d].length).toFixed(1));
+  charts.overtime = new Chart(document.getElementById('chartOvertime'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: avgs,
+        backgroundColor: labels.map(l => DEPT_COLORS[l] + '70'),
+        borderColor: labels.map(l => DEPT_COLORS[l]),
+        borderWidth: 1.5, borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.3,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x} hrs avg overtime` } } },
+      scales: {
+        x: { grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: true, title: { display: true, text: 'Avg OT Hours', color: '#5A7299', font: { size: 11 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderEducationChart() {
+  const counts = {};
+  EDUCATIONS.forEach(e => counts[e] = 0);
+  filteredEmployees.forEach(e => counts[e.education]++);
+  charts.education = new Chart(document.getElementById('chartEducation'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{ data: Object.values(counts), backgroundColor: ['#5B8DF9', '#22D3B4', '#E8A838', '#F06E6E', '#A78BFA'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.15,
+      cutout: '50%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 10 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.parsed / total) * 100).toFixed(1);
+              return ` ${ctx.label}: ${ctx.parsed} employees (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderScatterChart() {
+  const deptGroups = {};
+  filteredEmployees.forEach(e => {
+    if (!deptGroups[e.department]) deptGroups[e.department] = [];
+    deptGroups[e.department].push({ x: e.performance, y: e.salary, r: Math.max(3, e.tenure * 1.2) });
+  });
+  charts.scatter = new Chart(document.getElementById('chartScatter'), {
+    type: 'bubble',
+    data: {
+      datasets: Object.entries(deptGroups).map(([dept, pts]) => ({
+        label: dept,
+        data: pts,
+        backgroundColor: DEPT_COLORS[dept] + '60',
+        borderColor: DEPT_COLORS[dept],
+        borderWidth: 1.5
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.7,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } },
+        tooltip: { callbacks: {
+          label: ctx => {
+            const pt = ctx.raw;
+            return ` Perf: ${pt.x} | Salary: $${pt.y.toLocaleString()} | Tenure: ${Math.round(pt.r / 1.2)} yrs`;
+          }
+        }}
+      },
+      scales: {
+        x: { title: { display: true, text: 'Performance Rating', color: '#5A7299', font: { size: 11 } }, min: 0.5, max: 5.5, grid: { color: 'rgba(30,48,80,0.3)' } },
+        y: { title: { display: true, text: 'Annual Salary', color: '#5A7299', font: { size: 11 } }, ticks: { callback: v => '$' + (v / 1000) + 'k' }, grid: { color: 'rgba(30,48,80,0.3)' } }
+      }
+    }
+  });
+}
+
+function renderEmpTypeChart() {
+  const counts = {};
+  EMP_TYPES.forEach(t => counts[t] = 0);
+  filteredEmployees.forEach(e => { counts[e.empType] = (counts[e.empType] || 0) + 1; });
+  const colors = ['#22D3B4', '#E8A838', '#F06E6E', '#5B8DF9'];
+  charts.empType = new Chart(document.getElementById('chartEmpType'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(counts),
+      datasets: [{ data: Object.values(counts), backgroundColor: colors.map(c => c + '60'), borderColor: colors, borderWidth: 1.5, borderRadius: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.5,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} ${ctx.label} employees` } }
+      },
+      scales: {
+        y: { grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: true },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderLeaveChart() {
+  const deptLeave = {};
+  filteredEmployees.forEach(e => {
+    if (!deptLeave[e.department]) deptLeave[e.department] = [];
+    deptLeave[e.department].push(e.leaveBalance);
+  });
+  const labels = Object.keys(deptLeave).sort((a, b) => {
+    const avgA = deptLeave[a].reduce((x, y) => x + y, 0) / deptLeave[a].length;
+    const avgB = deptLeave[b].reduce((x, y) => x + y, 0) / deptLeave[b].length;
+    return avgB - avgA;
+  });
+  const avgs = labels.map(d => +(deptLeave[d].reduce((a, b) => a + b, 0) / deptLeave[d].length).toFixed(1));
+  charts.leave = new Chart(document.getElementById('chartLeave'), {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Avg Leave Days',
+        data: avgs,
+        backgroundColor: 'rgba(232,168,56,0.15)',
+        borderColor: '#E8A838',
+        borderWidth: 2,
+        pointBackgroundColor: '#E8A838',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.5,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.r} avg leave days` } }
+      },
+      scales: { r: { grid: { color: 'rgba(30,48,80,0.4)' }, angleLines: { color: 'rgba(30,48,80,0.4)' }, ticks: { display: false }, beginAtZero: true } }
+    }
+  });
+}
+
+function renderDiversityChart() {
+  const deptGender = {};
+  filteredEmployees.forEach(e => {
+    if (!deptGender[e.department]) deptGender[e.department] = { Male: 0, Female: 0 };
+    deptGender[e.department][e.gender]++;
+  });
+  const labels = Object.keys(deptGender);
+  charts.diversity = new Chart(document.getElementById('chartDiversity'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Male', data: labels.map(d => deptGender[d].Male), backgroundColor: 'rgba(91,141,249,0.6)', borderColor: '#5B8DF9', borderWidth: 1, borderRadius: 4 },
+        { label: 'Female', data: labels.map(d => deptGender[d].Female), backgroundColor: 'rgba(245,197,99,0.6)', borderColor: '#F5C563', borderWidth: 1, borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 1.5,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} employees in ${ctx.label}` } }
+      },
+      scales: {
+        y: { stacked: true, grid: { color: 'rgba(30,48,80,0.3)' }, beginAtZero: true },
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// =============================================
+// DATA TABLE
+// =============================================
+let sortCol = 'id';
+let sortDir = 'asc';
+
+function renderTable() {
+  const search = (document.getElementById('tableSearch').value || '').toLowerCase();
+  let data = filteredEmployees.filter(e =>
+    !search || e.name.toLowerCase().includes(search) || e.department.toLowerCase().includes(search) || e.position.toLowerCase().includes(search) || e.id.toLowerCase().includes(search)
+  );
+  data.sort((a, b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageData = data.slice(start, start + PAGE_SIZE);
+
+  const deptBadgeColors = {};
+  DEPARTMENTS.forEach(d => { deptBadgeColors[d] = DEPT_COLORS[d]; });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = pageData.map(e => {
+    const statusClass = e.status === 'Active' ? 'status-active' : e.status === 'On Leave' ? 'status-onleave' : 'status-remote';
+    const dc = deptBadgeColors[e.department] || '#888';
+    return `<tr>
+      <td style="color:var(--text-muted);font-weight:600">${e.id}</td>
+      <td style="font-weight:600">${e.name}</td>
+      <td><span class="dept-badge" style="background:${dc}18;color:${dc}">${e.department}</span></td>
+      <td>${e.position}</td>
+      <td>${e.level}</td>
+      <td>${e.age}</td>
+      <td>${e.gender}</td>
+      <td>${e.tenure}</td>
+      <td style="font-weight:600;color:var(--accent-gold)">$${e.salary.toLocaleString()}</td>
+      <td>${e.performance}</td>
+      <td>${e.attendance}%</td>
+      <td><span class="${statusClass}"><span class="status-dot"></span>${e.status}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Pagination
+  const pagDiv = document.getElementById('pagination');
+  let pagHTML = '';
+  if (totalPages > 1) {
+    pagHTML += `<button class="page-btn" onclick="goPage(${Math.max(1, currentPage - 1)})">&laquo;</button>`;
+    for (let i = 1; i <= totalPages; i++) {
+      pagHTML += `<button class="page-btn${i === currentPage ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    pagHTML += `<button class="page-btn" onclick="goPage(${Math.min(totalPages, currentPage + 1)})">&raquo;</button>`;
+  }
+  pagDiv.innerHTML = pagHTML;
+}
+
+function goPage(p) { currentPage = p; renderTable(); }
+
+// =============================================
+// TABLE SORTING
+// =============================================
+document.querySelectorAll('#employeeTable thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (!col) return;
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = 'asc'; }
+    document.querySelectorAll('#employeeTable thead th').forEach(t => t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    renderTable();
+  });
+});
+
+// =============================================
+// EVENT LISTENERS
+// =============================================
+['filterDept', 'filterGender', 'filterStatus', 'filterLevel', 'filterTenure'].forEach(id => {
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+document.getElementById('tableSearch').addEventListener('input', () => { currentPage = 1; renderTable(); });
+
+// =============================================
+// INIT
+// =============================================
+populateFilters();
+updateAll();
+</script>
+</body>
+</html>
